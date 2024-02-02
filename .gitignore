@@ -1,0 +1,22 @@
+# Terraform
+.terraform
+cleanser.zip
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
+.idea/
+dist/
+.parcel-cache/
+.tfsec/
+
+# NPM-related
+node_modules
+*.iml
+
+.DS_Store
+
+#General
+.env
+.idea
+code/tests/_impersonation/out
+code/tests/_impersonation/in
