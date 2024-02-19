@@ -7,6 +7,7 @@ import { DynamoDbCleanserRepo } from '@business/repository/CleanserRepository';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { readProcess, writeProcess } from '@business/integration';
 import { Process } from '@business/model/process';
+import * as process from "process";
 
 const s3Client = new s3.S3Client({
     region: 'eu-central-1',
@@ -23,11 +24,9 @@ const application = new CleanserProcess(
       process.env.TABLE_NAME ?? 'missing-envvar-TABLE_NAME')
 );
 
-export const handler = async (event: any, context: Context): Promise<{payload: Process}> => {
+export const handler = async (event: any, context: Context): Promise<{Payload: Process}> => {
     const input = readProcess(event);
-    // await application.cleanser(input);
-    return await application.cleanser(input).then((result)=>({
-        payload: writeProcess(input),
-    }));
-    // return writeProcess(input);
+    return application.cleanser(input).then(() => {
+        return {Payload: writeProcess(input)};
+    })
 }

@@ -17,7 +17,8 @@
   },
   "scripts": {
     "test": "jest --no-cache --forceExit",
-    "build-cleanser": "parcel build main/lambdas/cleanser.ts --target lambda --log-level info"
+    "build-cleanser": "parcel build main/lambdas/cleanser.ts --target lambda --log-level info",
+    "build-scanner": "parcel build main/lambdas/scanner.ts --target lambda --log-level info"
   },
   "keywords": [],
   "author": "",

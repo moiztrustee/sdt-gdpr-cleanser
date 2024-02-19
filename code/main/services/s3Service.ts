@@ -4,10 +4,6 @@ import { Readable } from 'stream'
 import { finished } from 'stream/promises'
 import { createReadStream, createWriteStream, rm } from 'fs'
 import KSUID from 'ksuid'
-// import { resolve } from 'path'
-// import { DeleteObjectsCommandInput } from '@aws-sdk/client-s3'
-// import { all } from 'axios'
-
 
 export type File = {
     name: string
@@ -71,4 +67,21 @@ export class S3Service {
           }),
       )
   }
+
+  async copy(destination: string, source: string, key: string): Promise<boolean> {
+
+      const input = {
+          "Bucket": destination,
+          "CopySource": source,
+          "Key": key
+      };
+      console.log('input', input);
+      return this.client.send(new s3.CopyObjectCommand(input)).then(output => {
+          return true;
+      }).catch(err => {
+          console.error("Error in copying file", err)
+          return false;
+      })
+  }
+
 }

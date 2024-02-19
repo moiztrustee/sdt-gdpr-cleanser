@@ -9,15 +9,10 @@ export class CleanserProcess {
     }
 
     async cleanser(process: Process): Promise<void>  {
-        console.log('process.ignoreList', process.ignoreList);
-        for await (const bucket of this.cleanserService.lookup(process.lookup)) {
-            const filteredBucket = this.cleanserService.filter(bucket, process.ignoreList, process.numOfDays);
-            for (const file of filteredBucket.files!) {
-                await this.repository.save({
-                    bucketName: bucket.name,
-                    data: file
-                });
-            }
+        for await (let file of this.repository.findFilesByProcess(process.ident)) {
+            console.log('moving file');
+            await this.cleanserService.moveFileToArchive("ts-sdt-gdpr-archived", file.bucketName, file.data)
+            //delete the file
         }
     }
 }

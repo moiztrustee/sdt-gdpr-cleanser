@@ -12,6 +12,20 @@ module "dynamodb" {
     {
       name = "FilePath"
       type = "S"
+    },
+    {
+      name = "PROCESS_ID"
+      type = "S"
+    }
+  ]
+
+  global_secondary_indexes = [
+    {
+      name                 = "GSI_PROCESSID"
+      projection_type      = "ALL"
+      hash_key             = "PROCESS_ID"
+      read_capacity_units  = 10
+      write_capacity_units = 1
     }
   ]
 }

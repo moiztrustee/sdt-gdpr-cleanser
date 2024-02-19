@@ -14,7 +14,7 @@ export interface Lookup {
 export interface Bucket {
     name: string;
     files: s3._Object[] | undefined
-};
+}
 
 export interface File {
     bucketName: string;
@@ -30,6 +30,7 @@ export class CleanserService implements Cleanser {
     async* lookup(lookups: Lookup[]): AsyncGenerator<Bucket> {
         for (const lookup of lookups) {
             const output = await this.s3Service.getAll({ Bucket: lookup.bucket });
+            //TODO i can filter files here
             yield { name: lookup.bucket, files: output.Contents };
         }
     }
@@ -48,5 +49,10 @@ export class CleanserService implements Cleanser {
             name: bucket.name,  
             files: filteredFiles
         } as Bucket;
+    }
+
+    async moveFileToArchive(destinationBucket: string, sourceBucket: string, file: s3._Object) {
+        const filePath: string = sourceBucket + '/' + file.Key;
+        return this.s3Service.copy(destinationBucket, filePath, filePath);
     }
 }

@@ -1,0 +1,32 @@
+{
+    "Comment": "SDT gdpr data cleanser",
+    "StartAt": "ScannerLambda",
+    "States": {
+        "ScannerLambda": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::lambda:invoke",
+            "Parameters": {
+                "FunctionName": "sdt-gdpr--scanner",
+                "Payload.$": "$"
+            },
+            "TimeoutSeconds": 300,
+            "OutputPath": "$.Payload",
+            "Next": "CleanserLambda" 
+        },
+        "CleanserLambda": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::lambda:invoke",
+            "TimeoutSeconds": 300,
+            "InputPath": "$.Payload",
+            "OutputPath": "$.Payload",
+            "Parameters": {
+                "FunctionName": "sdt-gdpr--cleanser",
+                "Payload.$": "$"
+            },
+            "Next": "Notifier"
+        },
+        "Notifier": {
+            "Type": "Succeed"
+        }
+    }
+}

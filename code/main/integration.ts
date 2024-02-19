@@ -19,6 +19,8 @@ ajv.addSchema({
 let schemaProcess = {
     type: "object",
     properties: {
+        ident: {type: 'string'},
+        run: {type: 'string'},      
         lookup: {
             type: "array", 
             items: {
@@ -35,8 +37,7 @@ let schemaProcess = {
         },
         numOfDays: {type: "number"}
     },
-    required: ["lookup", "ignoreList", "numOfDays"],
-   
+    required: ["run", "ident", "lookup", "ignoreList", "numOfDays"],
 };  
 
 const processValidator = ajv.compile<Process>(schemaProcess);

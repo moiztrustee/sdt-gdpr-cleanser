@@ -1,15 +1,18 @@
 import {
+    AttributeValue,
     DynamoDBClient,
     PutItemCommand,
     PutItemCommandInput,
     QueryCommand,
     QueryCommandInput,
+    QueryInput,
   } from '@aws-sdk/client-dynamodb'
-import { Bucket, File } from '@business/services/cleanserService';
+import { File } from '@business/services/cleanserService';
 import * as luxon from 'luxon';
 
 export interface CleanserRepository {
-    save(file: File): Promise<File>;
+    save(file: File, ident: string): Promise<File>;
+    findFilesByProcess(processId: string, batch?: number): AsyncGenerator<File>
 }
 
 export class DynamoDbCleanserRepo implements CleanserRepository {
@@ -17,30 +20,39 @@ export class DynamoDbCleanserRepo implements CleanserRepository {
         
     }
 
-    async findBucketContent(file: File, batch = 100) : Promise<Bucket | undefined>{
+    async* generator(input: QueryInput): AsyncGenerator<File>{
+        let key: { [key: string]: AttributeValue } | undefined;
+    
+        do {
+          const {Items, LastEvaluatedKey} = await this.dynamoDB.send(new QueryCommand({
+            ...input,
+            ExclusiveStartKey: key,
+          }));
 
-        const input = {
+          for(const item of Items || []) {
+            yield JSON.parse(item['payload']?.S!) as File;
+          }
+    
+          key = LastEvaluatedKey;
+        } while (!!key)
+      }    
+
+    findFilesByProcess(processId: string, batch = 100): AsyncGenerator<File>{
+
+        return this.generator({
             TableName: this.table,
-            KeyConditionExpression: '#bucket = :bucket AND #filePath = :filePath',
+            IndexName: 'GSI_PROCESSID',
+            KeyConditionExpression: '#PROCESS_ID = :processId',
             ExpressionAttributeNames: {
-                '#bucket': 'Bucket',
-                '#filePath': 'FilePath',
-            },            
-            ExpressionAttributeValues: {
-                ':bucket': { S: `BUCKET#${file.bucketName}` },
-                ':filePath': { S: `BUCKET#${file.data.Key}` },
+                '#PROCESS_ID': 'PROCESS_ID',
             },
-        } as QueryCommandInput
-
-        return this.dynamoDB.send(new QueryCommand(input)).then(response => {
-            if (response.Items && response.Items.length > 0) {                    
-                return JSON.parse(response.Items[0].payload.S!);
-            }
-            return undefined;
-        })
+            ExpressionAttributeValues: {
+                ':processId': { S: processId },
+            },
+        } as QueryCommandInput);
     }    
 
-    async save(file: File): Promise<File> {
+    async save(file: File, ident: string): Promise<File> {
         const submittedAt = luxon.DateTime.now().toFormat('yyyyMMddHHmm', {locale: 'UTC'});
 
         const input = {
@@ -49,6 +61,7 @@ export class DynamoDbCleanserRepo implements CleanserRepository {
                 Bucket: { S: `BUCKET#${file.bucketName}` },
                 FilePath: { S: `BUCKET#${file.data.Key}` },
                 SUBMITTED_AT: {N: `${submittedAt}`},
+                PROCESS_ID: {S: `${ident}`},
                 payload: {
                     S: JSON.stringify(file),
                 },

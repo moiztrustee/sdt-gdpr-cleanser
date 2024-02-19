@@ -14,26 +14,18 @@ assemble:
 deploy-cleanser: 
 	aws lambda update-function-code \
 		--function-name sdt-gdpr--cleanser \
-		--zip-file "fileb://code/dist/cleanser.zip"		
+		--zip-file "fileb://code/dist/cleanser.zip"	
 
-# .PHONY: deploy-s3-exporter
-# deploy-s3-exporter:
-# 	aws lambda update-function-code \
-# 		--function-name vw-fs-review-data-export--s3-exporter \
-# 		--zip-file "fileb://code/dist/s3Exporter.zip"
+.PHONY: deploy-scanner
+deploy-scanner: 
+	aws lambda update-function-code \
+		--function-name sdt-gdpr--scanner \
+		--zip-file "fileb://code/dist/scanner.zip"
 
-# .PHONY: deploy-ftp-publisher
-# deploy-ftp-publisher:
-# 	aws lambda update-function-code \
-# 		--function-name vw-fs-review-data-export--ftp-publisher \
-# 		--zip-file "fileb://code/dist/ftpPublisher.zip"
-
-# .PHONY: deploy
-# deploy:
-# 	$(MAKE) deploy-importer
-# 	$(MAKE) deploy-s3-exporter
-# 	$(MAKE) deploy-ftp-publisher
-
+.PHONY: deploy
+deploy-all:
+	$(MAKE) deploy-cleanser
+	$(MAKE) deploy-scanner
 
 .PHONY: initialize
 initialize:

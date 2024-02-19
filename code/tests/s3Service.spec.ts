@@ -65,4 +65,28 @@ describe('S3Service', () => {
         const bucket = await service.getAll({ Bucket: bucket2.name });
         expect(bucket.Contents![0].Key).toEqual(`generated/${filename}`);
     });
+
+
+    it('Should copy file from one bucket to another', async() => {
+
+        const service = new S3Service(client);
+        const filename = `${gen.guid()}.json`;
+        const path = "upload/test";
+        const filePath = bucket1.name + "/" + path + "/" + filename;
+
+        const exported = await service.write({
+                bucket: { name: bucket1.name },
+                path: path,
+                name: filename,
+            },
+            Readable.from('TEST-DATA'));
+
+        await service.copy(bucket2.name, filePath, filePath).then(async output => {
+
+            const bucketData = await service.getAll({Bucket: bucket2.name});
+            expect(bucketData.Name).toEqual(bucket2.name);
+            expect(bucketData.Contents![0].Key).toEqual(filePath);
+
+        });
+    });
 })

@@ -8,6 +8,12 @@ data "archive_file" "cleanser" {
   output_path = "cleanser-lambda.zip"
 }
 
+data "archive_file" "scanner" {
+  type        = "zip"
+  source_file = "${path.module}/index.js"
+  output_path = "scanner-lambda.zip"
+}
+
 
 data "aws_iam_policy_document" "cleanser_lambda" {
 
@@ -16,7 +22,40 @@ data "aws_iam_policy_document" "cleanser_lambda" {
       "s3:GetObject*",
       "s3:GetBucket*",
       "s3:List*",
-      "s3:Abort*"
+      "s3:Abort*",
+      "s3:PutObject*"
+    ]
+
+    resources = [
+        "*"
+    ]
+
+    effect = "Allow"
+  }  
+
+  statement {
+    actions = [
+      "dynamodb:PutItem",
+      "dynamodb:Query"
+    ]
+
+    resources = [
+      module.dynamodb.table_arn,
+      "${module.dynamodb.table_arn}/*",
+    ]
+  }
+}
+
+
+data "aws_iam_policy_document" "scanner_lambda" {
+
+  statement {
+    actions = [
+      "s3:GetObject*",
+      "s3:GetBucket*",
+      "s3:List*",
+      "s3:Abort*",
+      "s3:PutObject*"
     ]
 
     resources = [
