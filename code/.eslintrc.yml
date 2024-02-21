@@ -1,0 +1,20 @@
+env:
+  es6: true
+  node: true
+  jest: true
+  jasmine: true
+extends:
+  - '@trustedshops/eslint-config-etrusted'
+globals:
+  Atomics: readonly
+  SharedArrayBuffer: readonly
+parser: '@typescript-eslint/parser'
+parserOptions:
+  ecmaVersion: 2019
+  sourceType: module
+plugins:
+  - '@typescript-eslint'
+rules: {
+  import/order: warn,
+  no-undef: off
+}

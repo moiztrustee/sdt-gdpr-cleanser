@@ -6,6 +6,10 @@ start-local:
 stop-local:
 	./local/stop.sh
 
+.PHONY: lint
+lint:
+	cd code; npx eslint "{src,tests}/**/*.ts"
+
 .PHONY: assemble
 assemble:
 	$(MAKE) -C toolbox toolbox_assemble

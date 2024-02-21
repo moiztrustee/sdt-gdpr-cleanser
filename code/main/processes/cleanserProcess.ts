@@ -10,9 +10,8 @@ export class CleanserProcess {
 
     async cleanser(process: Process): Promise<void>  {
         for await (let file of this.repository.findFilesByProcess(process.ident)) {
-            console.log('moving file');
             await this.cleanserService.moveFileToArchive("ts-sdt-gdpr-archived", file.bucketName, file.data)
-            //delete the file
+
         }
     }
 }
