@@ -2,7 +2,7 @@ import * as s3 from '@aws-sdk/client-s3'
 import { Chance } from 'chance'
 import { Readable } from 'stream'
 import { S3Service } from '@business/services/s3Service'
-import streamStringifier  from './utils'
+import streamStringifier from './utils'
 
 describe('S3Service', () => {
   const gen = new Chance()
@@ -67,8 +67,7 @@ describe('S3Service', () => {
   });
 
 
-  it('' +
-      'Should copy file from one bucket to another', async () => {
+  it('Should copy file from one bucket to another', async () => {
     const service = new S3Service(client);
     const filename = `${ gen.guid() }.json`;
     const path = 'upload/test';
@@ -81,10 +80,40 @@ describe('S3Service', () => {
     },
     Readable.from('TEST-DATA'));
 
-    await service.copy(bucket2.name, filePath, filePath).then(async () => {
-      const bucketData = await service.getAll({ Bucket: bucket2.name });
-      expect(bucketData.Name).toEqual(bucket2.name);
-      expect(bucketData.Contents![0].Key).toEqual(filePath);
-    });
+    await service.copy(bucket2.name, filePath, filePath);
+    const exist = await service.checkIfFileExist(bucket2.name, filePath);
+    expect(exist).toBeTruthy();
+  });
+
+  it('Should check if file exist in bucket', async () => {
+    const service = new S3Service(client);
+    const path = 'generated';
+    const filename = `${ gen.guid() }.json`;
+    await service.write({
+      bucket: { name: bucket2.name },
+      path,
+      name: filename,
+    },
+    Readable.from('TEST-DATA'));
+
+    const exist = await service.checkIfFileExist(bucket2.name, `${ path }/${ filename }`);
+    expect(exist).toBeTruthy();
+  });
+
+  it('Should delete the file from bucket', async () => {
+    const service = new S3Service(client);
+    const path = 'generated';
+    const filename = 'DELETE_ME.txt';
+    await service.write({
+      bucket: { name: bucket2.name },
+      path,
+      name: filename,
+    },
+    Readable.from('TEST-DATA'));
+
+
+    await service.delete(bucket2.name, `${ path }/${ filename }`);
+    const exist = await service.checkIfFileExist(bucket2.name, `${ path }/${ filename }`);
+    expect(exist).toBeFalsy();
   });
 })

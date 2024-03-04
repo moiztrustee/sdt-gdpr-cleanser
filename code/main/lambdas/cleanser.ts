@@ -21,7 +21,8 @@ const application = new CleanserProcess(
     new DynamoDbCleanserRepo(new DynamoDBClient({
         region: 'eu-central-1',
       }),
-      process.env.TABLE_NAME ?? 'missing-envvar-TABLE_NAME')
+      process.env.TABLE_NAME ?? 'missing-env-var-TABLE_NAME'),
+    process.env.ARCHIVE_S3_BUCKET ?? 'missing-env-var-S3_BUCKET'
 );
 
 export const handler = async (event: any, context: Context): Promise<{Payload: Process}> => {

@@ -10,6 +10,10 @@ stop-local:
 lint:
 	cd code; npx eslint "{src,tests}/**/*.ts"
 
+.PHONY: lint-fix
+lint-fix:
+	cd code; npx eslint "{src,tests}/**/*.ts" --fix
+
 .PHONY: assemble
 assemble:
 	$(MAKE) -C toolbox toolbox_assemble

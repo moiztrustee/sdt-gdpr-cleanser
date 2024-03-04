@@ -9,8 +9,8 @@ module "cleanser_lambda" {
   timeout                    = 300
   iam_role_extra_policy_json = data.aws_iam_policy_document.cleanser_lambda.json
   environment = {
-    "TABLE_NAME"             = module.dynamodb.table_id
-    "S3_BUCKET"              = module.s3.bucket_id
+    "TABLE_NAME"                     = module.dynamodb.table_id
+    "ARCHIVE_S3_BUCKET"              = module.s3.bucket_id
   }
 }
 

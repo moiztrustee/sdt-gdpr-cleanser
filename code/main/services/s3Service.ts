@@ -4,6 +4,7 @@ import { Readable } from 'stream'
 import { finished } from 'stream/promises'
 import { createReadStream, createWriteStream, rm } from 'fs'
 import KSUID from 'ksuid'
+import * as console from "console";
 
 export type File = {
     name: string
@@ -69,13 +70,12 @@ export class S3Service {
   }
 
   async copy(destination: string, source: string, key: string): Promise<boolean> {
-
+      //TODO check if we can copy the object with time to delete
       const input = {
           "Bucket": destination,
           "CopySource": source,
           "Key": key
       };
-      console.log('input', input);
       return this.client.send(new s3.CopyObjectCommand(input)).then(output => {
           return true;
       }).catch(err => {
@@ -84,4 +84,29 @@ export class S3Service {
       })
   }
 
+  async delete(bucket: string, key: string) {
+      const input: s3.DeleteObjectCommandInput = {
+          Bucket: bucket,
+          Key: key
+      }
+    return this.client.send(new s3.DeleteObjectCommand(input)).then(output => {
+       return true;
+    }).catch(err => {
+        console.error("Error in deleting object", err);
+        return false;
+    });
+  }
+
+  async checkIfFileExist(bucket: string, key: string) {
+      const input: s3.HeadObjectCommandInput = {
+          Bucket: bucket,
+          Key: key
+      };
+
+      return this.client.send(new s3.HeadObjectCommand(input)).then(() => {
+          return true;
+      }).catch((err) => {
+          return false;
+      })
+  }
 }

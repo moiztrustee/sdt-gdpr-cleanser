@@ -9,7 +9,7 @@ export type Lookup = {
 
 export type Process = {
     ident: string,
-    run?: 'dry' | 'publish',
+    run?: 'dry' | 'live',
     numOfDays: number
     lookup: Lookup[]
     ignoreList: string[]
@@ -18,7 +18,7 @@ export type Process = {
 export const Scheduled = (now: DateTime = luxon.DateTime.now().toUTC()): Process => {
     return {
       ident: KSUID.randomSync().string,
-      run: 'publish',
+      run: 'dry',
       numOfDays: 180,
       lookup: [
         {

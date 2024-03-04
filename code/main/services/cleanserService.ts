@@ -55,4 +55,8 @@ export class CleanserService implements Cleanser {
         const filePath: string = sourceBucket + '/' + file.Key;
         return this.s3Service.copy(destinationBucket, filePath, filePath);
     }
+
+    async deleteFile(bucket: string, key: string) {
+        return this.s3Service.delete(bucket, key);
+    }
 }
