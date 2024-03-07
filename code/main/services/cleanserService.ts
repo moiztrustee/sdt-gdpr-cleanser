@@ -4,6 +4,9 @@ import { S3Service } from './s3Service';
 
 export interface Cleanser {
     lookup(lookup: Lookup[]): void;
+    filter(bucket: Bucket, ignoreList: string[], numOfDays: number): Bucket
+    moveFileToArchive(destinationBucket: string, sourceBucket: string, file: s3._Object): Promise<boolean>
+    deleteFile(bucket: string, key: string): Promise<boolean>
 }
 
 export interface Lookup {
@@ -30,7 +33,6 @@ export class CleanserService implements Cleanser {
     async* lookup(lookups: Lookup[]): AsyncGenerator<Bucket> {
         for (const lookup of lookups) {
             const output = await this.s3Service.getAll({ Bucket: lookup.bucket });
-            //TODO i can filter files here
             yield { name: lookup.bucket, files: output.Contents };
         }
     }
@@ -51,12 +53,12 @@ export class CleanserService implements Cleanser {
         } as Bucket;
     }
 
-    async moveFileToArchive(destinationBucket: string, sourceBucket: string, file: s3._Object) {
+    async moveFileToArchive(destinationBucket: string, sourceBucket: string, file: s3._Object): Promise<boolean> {
         const filePath: string = sourceBucket + '/' + file.Key;
         return this.s3Service.copy(destinationBucket, filePath, filePath);
     }
 
-    async deleteFile(bucket: string, key: string) {
+    async deleteFile(bucket: string, key: string): Promise<boolean> {
         return this.s3Service.delete(bucket, key);
     }
 }

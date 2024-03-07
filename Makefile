@@ -6,6 +6,10 @@ start-local:
 stop-local:
 	./local/stop.sh
 
+.PHONY: clean
+clean:
+	rm -rf code/dist
+
 .PHONY: lint
 lint:
 	cd code; npx eslint "{src,tests}/**/*.ts"
@@ -30,7 +34,7 @@ deploy-scanner:
 		--function-name sdt-gdpr--scanner \
 		--zip-file "fileb://code/dist/scanner.zip"
 
-.PHONY: deploy
+.PHONY: deploy-all
 deploy-all:
 	$(MAKE) deploy-cleanser
 	$(MAKE) deploy-scanner

@@ -70,7 +70,6 @@ export class S3Service {
   }
 
   async copy(destination: string, source: string, key: string): Promise<boolean> {
-      //TODO check if we can copy the object with time to delete
       const input = {
           "Bucket": destination,
           "CopySource": source,

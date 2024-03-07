@@ -13,17 +13,19 @@ export type Process = {
     numOfDays: number
     lookup: Lookup[]
     ignoreList: string[]
+    deleted?: number,
+    failed?: number
 }
 
 export const Scheduled = (now: DateTime = luxon.DateTime.now().toUTC()): Process => {
     return {
       ident: KSUID.randomSync().string,
-      run: 'dry',
+      run: 'live',
       numOfDays: 180,
       lookup: [
         {
-          "bucket": "ts-vw-fs-review-data-export-reports-dev",
-          "folder": "publish"
+          "bucket": "doiaa-messages",
+          "folder": ""
         }
       ],
       ignoreList: [

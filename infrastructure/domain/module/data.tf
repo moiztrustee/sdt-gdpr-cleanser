@@ -23,7 +23,8 @@ data "aws_iam_policy_document" "cleanser_lambda" {
       "s3:GetBucket*",
       "s3:List*",
       "s3:Abort*",
-      "s3:PutObject*"
+      "s3:PutObject*",
+      "s3:DeleteObject"
     ]
 
     resources = [

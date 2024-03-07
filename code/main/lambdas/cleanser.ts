@@ -27,7 +27,7 @@ const application = new CleanserProcess(
 
 export const handler = async (event: any, context: Context): Promise<{Payload: Process}> => {
     const input = readProcess(event);
-    return application.cleanser(input).then(() => {
-        return {Payload: writeProcess(input)};
+    return application.cleanser(input).then(process => {
+        return {Payload: writeProcess(process)};
     })
 }
