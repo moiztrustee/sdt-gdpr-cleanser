@@ -1,0 +1,222 @@
+version: 2.1
+orbs:
+  semantic-release: trustedshops-public/semantic-release@1.2.0
+  aws-cli: circleci/aws-cli@3.1.3
+
+executors:
+  runtime: &runtime
+    docker:
+      - image: "cimg/node:16.18.1"
+
+
+references:
+  test_runtime: &test_runtime
+    docker:
+      - image: "cimg/node:16.18.1"
+      - image: "localstack/localstack:0.13.3"
+        environment:
+          - DEBUG: 0
+          - SERVICES: dynamodb,s3
+          - DEFAULT_REGION: eu-central-1
+          - AWS_DEFAULT_REGION: eu-central-1
+      - image: "stilliard/pure-ftpd"
+        environment:
+          - FTP_USER_NAME: user
+          - FTP_USER_PASS: pass
+          - FTP_USER_HOME: /home/user
+    working_directory: ~/data
+
+commands:
+  ts-githubnpm-access:
+    steps:
+      - run:
+          name: write .npmrc
+          command: echo "//npm.pkg.github.com/:_authToken=$GITHUB_TOKEN" >> .npmrc
+
+  dependencies_get:
+    steps:
+      - ts-githubnpm-access
+      - run:
+          name: resolve dependencies
+          command: make initialize
+      - save_cache:
+          key: node-v001-dependencies-{{ checksum "./code/package.json" }}
+          paths:
+            - ~/.node-cache
+
+  sources_checkout:
+    steps:
+      - checkout
+      - dependencies_get
+      - persist_to_workspace:
+          root: ./
+          paths:
+            - .
+
+  sources_restore:
+    steps:
+      - attach_workspace:
+          at: .
+
+  dependencies_restore:
+    steps:
+      - restore_cache:
+          keys:
+            - node-v001-dependencies-{{ checksum "./code/package.json" }}
+      - dependencies_get
+
+  assemble:
+    steps:
+      - run:
+          name: assemble lambdas
+          command: make assemble
+
+# Job definitions
+jobs:
+  # Base job - just checkout the source
+  initialize:
+    <<: *runtime
+    resource_class: medium
+    steps:
+      - sources_checkout
+      - dependencies_get
+
+  test:
+    <<: *test_runtime
+    resource_class: medium
+    steps:
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - sources_restore
+      - dependencies_restore
+      - aws-cli/setup
+      - run:
+          name: tests
+          command: make test
+  release:
+    <<: *runtime
+    resource_class: medium
+    steps:
+      - run: mkdir -p ~/.ssh
+      - run: ssh-keyscan github.com >> ~/.ssh/known_hosts
+      - sources_restore
+      - dependencies_restore
+      - semantic-release/install
+      - semantic-release/execute
+
+  assemble:
+    <<: *runtime
+    resource_class: medium
+    steps:
+      - sources_restore
+      - dependencies_restore
+      - run:
+          name: assemble lambdas
+          command: make assemble
+      #- store_artifacts:
+      #    path: ./build/dist
+      #    destination: .
+      - persist_to_workspace:
+          name: save assembled lambdas
+          root: .
+          paths:
+            - code/dist/*.zip
+
+  deploy:
+    <<: *runtime
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: .
+      - aws-cli/setup:
+          role-arn: "$ROLE_ARN_PREFIX/lambda-deployment-sdt-gdpr--scanner"
+      - run:
+          name: Deploy Scanner Lambda
+          command: make deploy-scanner
+      - aws-cli/setup:
+          role-arn: "$ROLE_ARN_PREFIX/lambda-deployment-sdt-gdpr--cleanser"
+      - run:
+          name: Deploy Cleanser Lambda
+          command: make deploy-cleanser
+
+workflows:
+  version: 2
+  release:
+    jobs:
+      - initialize:
+          context: mars-global
+
+      - test:
+          context: mars-global
+          requires:
+            - initialize
+
+      - release:
+          context: github-package-rw
+          requires:
+            - test
+          filters:
+            branches:
+              only:
+                - alpha
+                - prerelease
+                - main
+
+  deploy:
+    jobs:
+      - initialize:
+          context: mars-global
+          filters:
+            branches:
+              ignore:
+                - /.*/
+            tags:
+              only: /^v.*/
+
+      - assemble:
+          context: mars-global
+          requires:
+            - initialize
+          filters:
+            branches:
+              ignore:
+                - /.*/
+            tags:
+              only: /^v.*/
+
+      - deploy:
+          name: "deploy-development"
+          context: ts-solution-design-dev-role
+          requires:
+            - assemble
+          filters:
+            branches:
+              ignore:
+                - /.*/
+            tags:
+              only: /^v.*/
+
+      - deploy:
+          name: "deploy-test"
+          context: ts-solution-design-test-role
+          requires:
+            - assemble
+          filters:
+            branches:
+              ignore:
+                - /.*/
+            tags:
+              only: /^v(\d)(\.\d+){2,}(-beta\.\d+)?/
+
+      - deploy:
+          name: "deploy-prod"
+          context: ts-solution-design-prod-role
+          requires:
+            - assemble
+            - deploy-test
+          filters:
+            branches:
+              ignore:
+                - /.*/
+            tags:
+              only: /^v(\d)(\.\d+){2,}/
